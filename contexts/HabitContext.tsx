@@ -36,14 +36,18 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const completionsData = await AsyncStorage.getItem('@completions');
         
         if (habitsData) {
-          setHabits(JSON.parse(habitsData));
+          const parsedHabits = JSON.parse(habitsData);
+          console.log('Loaded habits:', parsedHabits); // Debug log
+          setHabits(parsedHabits);
         }
         
         if (completionsData) {
-          setCompletions(JSON.parse(completionsData));
+          const parsedCompletions = JSON.parse(completionsData);
+          console.log('Loaded completions:', parsedCompletions); // Debug log
+          setCompletions(parsedCompletions);
         }
       } catch (error) {
-        console.error('Error loading data', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
@@ -56,9 +60,11 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const saveHabits = async () => {
       try {
-        await AsyncStorage.setItem('@habits', JSON.stringify(habits));
+        const habitsJson = JSON.stringify(habits);
+        console.log('Saving habits:', habitsJson); // Debug log
+        await AsyncStorage.setItem('@habits', habitsJson);
       } catch (error) {
-        console.error('Error saving habits', error);
+        console.error('Error saving habits:', error);
       }
     };
 
@@ -71,9 +77,11 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const saveCompletions = async () => {
       try {
-        await AsyncStorage.setItem('@completions', JSON.stringify(completions));
+        const completionsJson = JSON.stringify(completions);
+        console.log('Saving completions:', completionsJson); // Debug log
+        await AsyncStorage.setItem('@completions', completionsJson);
       } catch (error) {
-        console.error('Error saving completions', error);
+        console.error('Error saving completions:', error);
       }
     };
 
@@ -82,35 +90,10 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [completions, loading]);
 
-  // Auto-mark habits as not completed if time has passed
-  useEffect(() => {
-    const checkOverdueHabits = () => {
-      const now = new Date();
-      const todayHabits = getTodayHabits();
-      
-      todayHabits.forEach(habit => {
-        if (!habit.isCompleted) {
-          const [hours, minutes] = habit.time.split(':').map(Number);
-          const habitTime = new Date();
-          habitTime.setHours(hours, minutes, 0, 0);
-          
-          if (isAfter(now, habitTime)) {
-            // Mark as not completed if time has passed and not already completed
-            toggleHabitCompletion(habit.id, now, false);
-          }
-        }
-      });
-    };
-
-    const interval = setInterval(checkOverdueHabits, 60000); // Check every minute
-    
-    return () => clearInterval(interval);
-  }, [habits, completions]);
-
   // Check if a habit should be scheduled for a specific date
   const shouldScheduleHabit = (habit: Habit, date: Date): boolean => {
-    const dayOfWeek = getDay(date); // 0-6, Sunday to Saturday
-    const dayOfMonth = getDate(date); // 1-31
+    const dayOfWeek = getDay(date);
+    const dayOfMonth = getDate(date);
     
     switch (habit.repeatType) {
       case 'daily':
@@ -132,19 +115,10 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Get habits for a specific date
   const getHabitsForDate = (date: Date): HabitWithStatus[] => {
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const now = new Date();
     
     return habits
-      .filter(habit => {
-        // Check if the habit should be scheduled for this date
-        if (!shouldScheduleHabit(habit, date)) {
-          return false;
-        }
-        // Removido o filtro de horário para mostrar todos os hábitos do dia
-        return true;
-      })
+      .filter(habit => shouldScheduleHabit(habit, date))
       .map(habit => {
-        // Find completion for this habit on this date
         const completion = completions.find(
           c => c.habitId === habit.id && c.date === formattedDate
         );
@@ -161,69 +135,87 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Add a new habit
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
-    const now = new Date();
-    const newHabit: Habit = {
-      id: uuidv4(),
-      ...habitData,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
-    };
-    setHabits(prevHabits => {
-      const updatedHabits = [...prevHabits, newHabit];
-      AsyncStorage.setItem('@habits', JSON.stringify(updatedHabits)); // Salva imediatamente
-      console.log('Hábito salvo:', newHabit);
-      return updatedHabits;
-    });
+    try {
+      const now = new Date();
+      const newHabit: Habit = {
+        id: uuidv4(),
+        ...habitData,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      };
+      
+      console.log('Adding new habit:', newHabit); // Debug log
+      
+      setHabits(prevHabits => {
+        const updatedHabits = [...prevHabits, newHabit];
+        console.log('Updated habits array:', updatedHabits); // Debug log
+        return updatedHabits;
+      });
+    } catch (error) {
+      console.error('Error adding habit:', error);
+      throw error;
+    }
   };
 
   // Update an existing habit
   const updateHabit = async (updatedHabit: Habit): Promise<void> => {
-    updatedHabit.updatedAt = new Date().toISOString();
-    
-    setHabits(prevHabits => 
-      prevHabits.map(habit => 
-        habit.id === updatedHabit.id ? updatedHabit : habit
-      )
-    );
+    try {
+      updatedHabit.updatedAt = new Date().toISOString();
+      
+      setHabits(prevHabits => 
+        prevHabits.map(habit => 
+          habit.id === updatedHabit.id ? updatedHabit : habit
+        )
+      );
+    } catch (error) {
+      console.error('Error updating habit:', error);
+      throw error;
+    }
   };
 
   // Delete a habit
   const deleteHabit = async (id: string): Promise<void> => {
-    setHabits(prevHabits => prevHabits.filter(habit => habit.id !== id));
-    
-    // Also remove all completions for this habit
-    setCompletions(prevCompletions => 
-      prevCompletions.filter(completion => completion.habitId !== id)
-    );
+    try {
+      setHabits(prevHabits => prevHabits.filter(habit => habit.id !== id));
+      setCompletions(prevCompletions => 
+        prevCompletions.filter(completion => completion.habitId !== id)
+      );
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      throw error;
+    }
   };
 
   // Toggle habit completion status
   const toggleHabitCompletion = async (habitId: string, date: Date, completed: boolean): Promise<void> => {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const existingCompletion = completions.find(
-      c => c.habitId === habitId && c.date === formattedDate
-    );
-    
-    if (existingCompletion) {
-      // Update existing completion
-      setCompletions(prevCompletions => 
-        prevCompletions.map(completion => 
-          completion.id === existingCompletion.id
-            ? { ...completion, completed, completedAt: new Date().toISOString() }
-            : completion
-        )
+    try {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const existingCompletion = completions.find(
+        c => c.habitId === habitId && c.date === formattedDate
       );
-    } else {
-      // Create new completion
-      const newCompletion: HabitCompletion = {
-        id: uuidv4(),
-        habitId,
-        date: formattedDate,
-        completed,
-        completedAt: new Date().toISOString()
-      };
       
-      setCompletions(prevCompletions => [...prevCompletions, newCompletion]);
+      if (existingCompletion) {
+        setCompletions(prevCompletions => 
+          prevCompletions.map(completion => 
+            completion.id === existingCompletion.id
+              ? { ...completion, completed, completedAt: new Date().toISOString() }
+              : completion
+          )
+        );
+      } else {
+        const newCompletion: HabitCompletion = {
+          id: uuidv4(),
+          habitId,
+          date: formattedDate,
+          completed,
+          completedAt: new Date().toISOString()
+        };
+        
+        setCompletions(prevCompletions => [...prevCompletions, newCompletion]);
+      }
+    } catch (error) {
+      console.error('Error toggling habit completion:', error);
+      throw error;
     }
   };
 
@@ -239,23 +231,23 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (completedCount / habitCompletions.length) * 100;
   };
 
+  const contextValue: HabitContextProps = {
+    habits,
+    completions,
+    getTodayHabits,
+    getHabitsForDate,
+    addHabit,
+    updateHabit,
+    deleteHabit,
+    toggleHabitCompletion,
+    getHabitCompletionRate,
+    selectedDate,
+    setSelectedDate,
+    loading
+  };
+
   return (
-    <HabitContext.Provider
-      value={{
-        habits,
-        completions,
-        getTodayHabits,
-        getHabitsForDate,
-        addHabit,
-        updateHabit,
-        deleteHabit,
-        toggleHabitCompletion,
-        getHabitCompletionRate,
-        selectedDate,
-        setSelectedDate,
-        loading
-      }}
-    >
+    <HabitContext.Provider value={contextValue}>
       {children}
     </HabitContext.Provider>
   );
