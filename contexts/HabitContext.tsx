@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Habit, HabitCompletion, HabitWithStatus, RepeatType } from '@/types/habit';
 import { format, isToday, parseISO, isAfter, startOfDay, isSameDay, differenceInDays, getDay, getDate, addDays, isBefore } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { Platform } from 'react-native';
 
 interface HabitContextProps {
   habits: Habit[];
@@ -22,6 +23,23 @@ interface HabitContextProps {
 
 const HabitContext = createContext<HabitContextProps | undefined>(undefined);
 
+// Fallback ID generator in case UUID fails
+const generateFallbackId = () => {
+  const timestamp = new Date().getTime();
+  const random = Math.floor(Math.random() * 10000);
+  return `${timestamp}-${random}`;
+};
+
+// Safe UUID generator with fallback
+const generateId = () => {
+  try {
+    return uuidv4();
+  } catch (error) {
+    console.warn('UUID generation failed, using fallback:', error);
+    return generateFallbackId();
+  }
+};
+
 export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
@@ -37,13 +55,13 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         if (habitsData) {
           const parsedHabits = JSON.parse(habitsData);
-          console.log('Loaded habits:', parsedHabits); // Debug log
+          console.log('Loaded habits:', parsedHabits);
           setHabits(parsedHabits);
         }
         
         if (completionsData) {
           const parsedCompletions = JSON.parse(completionsData);
-          console.log('Loaded completions:', parsedCompletions); // Debug log
+          console.log('Loaded completions:', parsedCompletions);
           setCompletions(parsedCompletions);
         }
       } catch (error) {
@@ -61,7 +79,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saveHabits = async () => {
       try {
         const habitsJson = JSON.stringify(habits);
-        console.log('Saving habits:', habitsJson); // Debug log
+        console.log('Saving habits:', habitsJson);
         await AsyncStorage.setItem('@habits', habitsJson);
       } catch (error) {
         console.error('Error saving habits:', error);
@@ -78,7 +96,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saveCompletions = async () => {
       try {
         const completionsJson = JSON.stringify(completions);
-        console.log('Saving completions:', completionsJson); // Debug log
+        console.log('Saving completions:', completionsJson);
         await AsyncStorage.setItem('@completions', completionsJson);
       } catch (error) {
         console.error('Error saving completions:', error);
@@ -137,18 +155,21 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
     try {
       const now = new Date();
+      const id = generateId();
+      console.log('Generated ID:', id); // Debug log
+      
       const newHabit: Habit = {
-        id: uuidv4(),
+        id,
         ...habitData,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString()
       };
       
-      console.log('Adding new habit:', newHabit); // Debug log
+      console.log('Adding new habit:', newHabit);
       
       setHabits(prevHabits => {
         const updatedHabits = [...prevHabits, newHabit];
-        console.log('Updated habits array:', updatedHabits); // Debug log
+        console.log('Updated habits array:', updatedHabits);
         return updatedHabits;
       });
     } catch (error) {
@@ -204,7 +225,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         );
       } else {
         const newCompletion: HabitCompletion = {
-          id: uuidv4(),
+          id: generateId(),
           habitId,
           date: formattedDate,
           completed,
