@@ -23,14 +23,12 @@ interface HabitContextProps {
 
 const HabitContext = createContext<HabitContextProps | undefined>(undefined);
 
-// Fallback ID generator in case UUID fails
 const generateFallbackId = () => {
   const timestamp = new Date().getTime();
   const random = Math.floor(Math.random() * 10000);
   return `${timestamp}-${random}`;
 };
 
-// Safe UUID generator with fallback
 const generateId = () => {
   try {
     return uuidv4();
@@ -46,7 +44,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
 
-  // Load data from AsyncStorage
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -55,13 +52,11 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         if (habitsData) {
           const parsedHabits = JSON.parse(habitsData);
-          console.log('Loaded habits:', parsedHabits);
           setHabits(parsedHabits);
         }
         
         if (completionsData) {
           const parsedCompletions = JSON.parse(completionsData);
-          console.log('Loaded completions:', parsedCompletions);
           setCompletions(parsedCompletions);
         }
       } catch (error) {
@@ -74,12 +69,10 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadData();
   }, []);
 
-  // Save habits to AsyncStorage whenever they change
   useEffect(() => {
     const saveHabits = async () => {
       try {
         const habitsJson = JSON.stringify(habits);
-        console.log('Saving habits:', habitsJson);
         await AsyncStorage.setItem('@habits', habitsJson);
       } catch (error) {
         console.error('Error saving habits:', error);
@@ -91,12 +84,10 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [habits, loading]);
 
-  // Save completions to AsyncStorage whenever they change
   useEffect(() => {
     const saveCompletions = async () => {
       try {
         const completionsJson = JSON.stringify(completions);
-        console.log('Saving completions:', completionsJson);
         await AsyncStorage.setItem('@completions', completionsJson);
       } catch (error) {
         console.error('Error saving completions:', error);
@@ -108,7 +99,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [completions, loading]);
 
-  // Check if a habit should be scheduled for a specific date
   const shouldScheduleHabit = (habit: Habit, date: Date): boolean => {
     const dayOfWeek = getDay(date);
     const dayOfMonth = getDate(date);
@@ -125,12 +115,10 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Get habits for today
   const getTodayHabits = (): HabitWithStatus[] => {
     return getHabitsForDate(new Date());
   };
 
-  // Get habits for a specific date
   const getHabitsForDate = (date: Date): HabitWithStatus[] => {
     const formattedDate = format(date, 'yyyy-MM-dd');
     
@@ -145,18 +133,16 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...habit,
           isCompleted: completion?.completed || false,
           completionId: completion?.id,
-          isScheduledForToday: true
+          isScheduledForToday: shouldScheduleHabit(habit, date)
         };
       })
       .sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Add a new habit
   const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
     try {
       const now = new Date();
       const id = generateId();
-      console.log('Generated ID:', id); // Debug log
       
       const newHabit: Habit = {
         id,
@@ -165,20 +151,13 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updatedAt: now.toISOString()
       };
       
-      console.log('Adding new habit:', newHabit);
-      
-      setHabits(prevHabits => {
-        const updatedHabits = [...prevHabits, newHabit];
-        console.log('Updated habits array:', updatedHabits);
-        return updatedHabits;
-      });
+      setHabits(prevHabits => [...prevHabits, newHabit]);
     } catch (error) {
       console.error('Error adding habit:', error);
       throw error;
     }
   };
 
-  // Update an existing habit
   const updateHabit = async (updatedHabit: Habit): Promise<void> => {
     try {
       updatedHabit.updatedAt = new Date().toISOString();
@@ -194,7 +173,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Delete a habit
   const deleteHabit = async (id: string): Promise<void> => {
     try {
       setHabits(prevHabits => prevHabits.filter(habit => habit.id !== id));
@@ -207,7 +185,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Toggle habit completion status
   const toggleHabitCompletion = async (habitId: string, date: Date, completed: boolean): Promise<void> => {
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
@@ -240,7 +217,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Calculate completion rate for a habit
   const getHabitCompletionRate = (habitId: string): number => {
     const habitCompletions = completions.filter(c => c.habitId === habitId);
     

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Chrome as Home, History, Info } from 'lucide-react-native';
+import { Home, History, Info } from 'lucide-react-native';
 import { HabitProvider } from '@/contexts/HabitContext';
 import { Platform, TextInput } from 'react-native';
 import { useHabits } from '@/contexts/HabitContext';
