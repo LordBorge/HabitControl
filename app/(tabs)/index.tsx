@@ -22,14 +22,15 @@ export default function HomeScreen() {
     toggleHabitCompletion,
     getHabitCompletionRate,
     selectedDate,
-    setSelectedDate
+    setSelectedDate,
+    getHabitsForDate
   } = useHabits();
   
   const [newHabitModalVisible, setNewHabitModalVisible] = useState(false);
   const [habitDetailsModalVisible, setHabitDetailsModalVisible] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<HabitWithStatus | undefined>(undefined);
   
-  const todayHabits = getTodayHabits();
+  const dateHabits = getHabitsForDate(selectedDate);
 
   const handleAddHabit = (habitData: any) => {
     addHabit(habitData);
@@ -92,7 +93,7 @@ export default function HomeScreen() {
         />
         
         <HabitList 
-          habits={todayHabits}
+          habits={dateHabits}
           onToggleStatus={handleToggleStatus}
           onHabitPress={handleHabitPress}
         />
@@ -127,7 +128,6 @@ export default function HomeScreen() {
           onToggleStatus={(completed) => {
             if (selectedHabit) {
               toggleHabitCompletion(selectedHabit.id, selectedDate, completed);
-              // Update the selected habit to reflect the new status
               setSelectedHabit({
                 ...selectedHabit,
                 isCompleted: completed
