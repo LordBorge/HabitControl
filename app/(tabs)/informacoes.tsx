@@ -1,12 +1,24 @@
-import React from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Linking, Modal } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useProfile } from '@/contexts/ProfileContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Moon, Sun, Github, Heart, Mail } from 'lucide-react-native';
+import { Moon, Sun, Github, Heart, Mail, User, LogOut } from 'lucide-react-native';
 import Constants from 'expo-constants';
+import ProfileForm from '@/components/ProfileForm';
 
 export default function InformacoesScreen() {
   const { theme, themeType, toggleTheme } = useTheme();
+  const { profile, signOut } = useProfile();
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -18,6 +30,55 @@ export default function InformacoesScreen() {
         </View>
         
         <View style={styles.content}>
+          <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+              Perfil
+            </Text>
+            {profile ? (
+              <>
+                <View style={styles.profileInfo}>
+                  <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={styles.avatarText}>
+                      {profile.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.profileDetails}>
+                    <Text style={[styles.profileName, { color: theme.colors.text }]}>
+                      {profile.name}
+                    </Text>
+                    <Text style={[styles.profileEmail, { color: theme.colors.inactive }]}>
+                      {profile.email}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.profileActions}>
+                  <TouchableOpacity
+                    style={[styles.profileButton, { backgroundColor: theme.colors.primary }]}
+                    onPress={() => setProfileModalVisible(true)}
+                  >
+                    <User size={20} color="#FFF" />
+                    <Text style={styles.profileButtonText}>Editar Perfil</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.profileButton, { backgroundColor: theme.colors.error }]}
+                    onPress={handleSignOut}
+                  >
+                    <LogOut size={20} color="#FFF" />
+                    <Text style={styles.profileButtonText}>Sair</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.profileButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setProfileModalVisible(true)}
+              >
+                <User size={20} color="#FFF" />
+                <Text style={styles.profileButtonText}>Criar Perfil</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
             <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
               Sobre o App
@@ -105,6 +166,27 @@ export default function InformacoesScreen() {
           </Text>
         </View>
       </SafeAreaView>
+
+      <Modal
+        visible={profileModalVisible}
+        animationType="slide"
+        onRequestClose={() => setProfileModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              {profile ? 'Editar Perfil' : 'Criar Perfil'}
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setProfileModalVisible(false)}
+            >
+              <Text style={[styles.closeButtonText, { color: theme.colors.text }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ProfileForm onClose={() => setProfileModalVisible(false)} />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -142,6 +224,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
+  },
+  profileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#FFF',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  profileDetails: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+  },
+  profileActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  profileButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    marginLeft: 8,
   },
   appName: {
     fontSize: 24,
@@ -202,5 +331,27 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
   },
 });
