@@ -1,16 +1,13 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Chrome as Home, History, Info, PhoneIncoming as HomeIcon } from 'lucide-react-native';
+import { Chrome as Home, History, Info, HomeIcon } from 'lucide-react-native';
 import { HabitProvider } from '@/contexts/HabitContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { Platform, TextInput } from 'react-native';
 import { useHabits } from '@/contexts/HabitContext';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { StatusBar } from 'expo-status-bar';
 
 export default function TabLayout() {
-  useFrameworkReady();
   const { theme } = useTheme();
   const { deleteHabit } = useHabits();
 
@@ -21,7 +18,6 @@ export default function TabLayout() {
   return (
     <ProfileProvider>
       <HabitProvider>
-        <StatusBar style={theme.dark ? 'light' : 'dark'} />
         <Tabs
           screenOptions={{
             headerShown: false,
