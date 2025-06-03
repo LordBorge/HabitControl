@@ -139,7 +139,7 @@ export default function InformacoesScreen() {
             <View style={styles.contactButtons}>
               <TouchableOpacity
                 style={[styles.contactButton, { backgroundColor: theme.colors.primary }]}
-                onPress={() => Linking.openURL('mailto:dev@habitcontrol.com')}
+                onPress={() => Linking.openURL('https://github.com/LordBorge/HabitControl')}
               >
                 <Mail size={20} color="#FFF" />
                 <Text style={styles.contactButtonText}>Contato</Text>
@@ -147,7 +147,7 @@ export default function InformacoesScreen() {
               
               <TouchableOpacity
                 style={[styles.contactButton, { backgroundColor: '#333' }]}
-                onPress={() => Linking.openURL('https://github.com/habticontrol')}
+                onPress={() => Linking.openURL('https://github.com/LordBorge/HabitControl')}
               >
                 <Github size={20} color="#FFF" />
                 <Text style={styles.contactButtonText}>GitHub</Text>
